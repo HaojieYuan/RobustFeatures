@@ -227,6 +227,31 @@ class DCTTransform(object):
             data = self.idct_batch(data)
         return data
 
+    def dct_split(self, data, ratio, to_rgb=True):
+        """
+        input: rgb_data
+        return rgb_data, rgb_data (if to_rgb == True)
+        """
+        N, C, H, W = data.size()
+        # frequency mask
+        freq_mask_low = torch.zeros_like(data)
+        freq_mask_high = torch.ones_like(data)
+        fill_h = int(H * ratio)
+        fill_w = int(W * ratio)
+        freq_mask_low[:, :, :fill_h, :fill_w] = 1
+        freq_mask_high[:, :, :fill_h, :fill_w] = 0
+
+        # rgb_noise -> dct_noise -> dct_mask -> rgb_noise
+        data = self.dct_batch(data)
+        data_low = data * freq_mask_low
+        data_high = data * freq_mask_high
+        # else:
+        #     raise ValueError('unknown dct modality[{}] in _dct_mask func'.format(self.modality))
+        if to_rgb:
+            data_low = self.idct_batch(data_low)
+            data_high = self.idct_batch(data_high)
+        return data_low, data_high
+
 
 if __name__ == '__main__':
     x = torch.Tensor(1, 3, 112, 112)
