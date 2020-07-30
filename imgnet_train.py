@@ -126,12 +126,14 @@ def main():
 
     random.seed(59)
     torch.manual_seed(59)
-    cudnn.deterministic = True
+    cudnn.deterministic = False
+    '''
     warnings.warn('You have chosen to seed training. '
                   'This will turn on the CUDNN deterministic setting, '
                   'which can slow down your training considerably! '
                   'You may see unexpected behavior when restarting '
                   'from checkpoints.')
+    '''
 
 
     global best_acc1
@@ -146,10 +148,10 @@ def main():
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
 
-    #optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
-                                weight_decay=args.weight_decay)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
+    #                            weight_decay=args.weight_decay)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -204,7 +206,7 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
 
-        adjust_learning_rate(optimizer, epoch, args)
+        #adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
@@ -218,7 +220,6 @@ def main():
 
         save_checkpoint({
             'epoch': epoch + 1,
-            'arch': args.arch,
             'state_dict': model.state_dict(),
             'best_acc1': best_acc1,
             'optimizer' : optimizer.state_dict(),
@@ -286,10 +287,8 @@ def validate(val_loader, model, criterion, args):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            if args.gpu is not None:
-                images = images.cuda(args.gpu, non_blocking=True)
-            if torch.cuda.is_available():
-                target = target.cuda(args.gpu, non_blocking=True)
+            images = images.cuda(non_blocking=True)
+            target = target.cuda(non_blocking=True)
 
             # compute output
             output = model(images)
