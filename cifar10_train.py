@@ -21,6 +21,7 @@ import torchvision.models as models
 import cifar10_models
 from torch.utils.data import Dataset
 from PIL import Image
+from DCT import split_single_img_tensor
 
 import pdb
 
@@ -39,6 +40,7 @@ class udf_dataset(Dataset):
 
         self.num = len(self.imgpaths)
         self.transform = transform
+        self.frequency = frequency
 
     def __len__(self):
         return self.num
@@ -48,12 +50,12 @@ class udf_dataset(Dataset):
         img = self.transform(img)
         label = self.labels[idx]
 
-        if frequency == 'normal':
+        if self.frequency == 'normal':
             img = img
-        elif frequency == 'high':
-            pass
-        elif frequency == 'low':
-            pass
+        elif self.frequency == 'high':
+            img, _ = split_single_img_tensor(img)
+        elif self.frequency == 'low':
+            _, img = split_single_img_tensor(img)
 
         return img, label
 
@@ -70,45 +72,31 @@ def get_dataset(partition, frequency):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
+    cifar10_preprocess_train_high = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0., 0., 0.), (0.2023, 0.1994, 0.2010))
+    ])
+
     cifar10_preprocess_val  = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
     if partition =='train':
-        if frequency == 'normal':
+        if frequency == 'high':
+            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/train',
+                           '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
+                           transform=cifar10_preprocess_train_high, frequency=frequency)
+        else:
             return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/train',
                                '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
-                                transform=cifar10_preprocess_train)
-
-        elif frequency == 'high':
-            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images_high/train',
-                               '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
-                                transform=cifar10_preprocess_train)
-
-        elif frequency == 'low':
-            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images_low/train',
-                               '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
-                                transform=cifar10_preprocess_train)
-
-        else:
-            assert False, 'Unknown frequency {} for split {}'.format(frequency, partition)
-
+                               transform=cifar10_preprocess_train, frequency=frequency)
     else:
-
-        if frequency == 'normal':
-            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/val',
-                               '/home/haojieyuan/Data/CIFAR_10_data/images/val.txt',
-                                transform=cifar10_preprocess_val)
-
-        elif frequency == 'high':
-            assert False, 'High/Low frequency for val partition not supported yet.'
-
-        elif frequency == 'low':
-            assert False, 'High/Low frequency for val partition not supported yet.'
-
-        else:
-            assert False, 'Unknown frequency {} for split {}'.format(frequency, partition)
+        return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/val',
+                           '/home/haojieyuan/Data/CIFAR_10_data/images/val.txt',
+                           transform=cifar10_preprocess_val, frequency=frequency)
 
 
 

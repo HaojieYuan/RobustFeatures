@@ -178,6 +178,26 @@ def idct_3d(X, norm=None):
     return x3.transpose(-1, -3).transpose(-1, -2)
 
 
+def split_single_img_tensor(x, ratio=0.5):
+    C, H, W = x.size()
+    fill_h = int(H * ratio)
+    fill_w = int(W * ratio)
+
+    mask_low = torch.zeros_like(x)
+    mask_low[:, :fill_h, :fill_w] = 1
+    mask_high = 1 - mask_low
+
+    dct_x = torch.stack([dct_2d(c) for c in x])
+
+    x_high_dct = dct_x * mask_high
+    x_low_dct  = dct_x * mask_low
+
+    x_high = torch.stack([idct_2d(c) for c in x_high_dct])
+    x_low  = torch.stack([idct_2d(c) for c in x_low_dct])
+
+    return x_high, x_low
+
+
 class DCTTransform(object):
     def __init__(self, channels=3):
         self.channels = channels
