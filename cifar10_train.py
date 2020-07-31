@@ -22,6 +22,7 @@ import cifar10_models
 from torch.utils.data import Dataset
 from PIL import Image
 from DCT import split_single_img_tensor
+import random
 
 import pdb
 
@@ -45,6 +46,24 @@ class udf_dataset(Dataset):
     def __len__(self):
         return self.num
 
+    def random_high(self):
+        idx = random.randint(0, self.num-1)
+        img = Image.open(self.imgpaths[idx])
+        img = self.transform(img)
+        label = self.labels[idx]
+        img, _ = split_single_img_tensor(img)
+
+        return img
+
+    def random_low(self):
+        idx = random.randint(0, self.num-1)
+        img = Image.open(self.imgpaths[idx])
+        img = self.transform(img)
+        label = self.labels[idx]
+        _, img = split_single_img_tensor(img)
+
+        return img
+
     def __getitem__(self, idx):
         img = Image.open(self.imgpaths[idx])
         img = self.transform(img)
@@ -54,8 +73,10 @@ class udf_dataset(Dataset):
             img = img
         elif self.frequency == 'high':
             img, _ = split_single_img_tensor(img)
+            img = img + self.random_low()
         elif self.frequency == 'low':
             _, img = split_single_img_tensor(img)
+            img = img + self.random_high()
 
         return img, label
 
@@ -72,12 +93,6 @@ def get_dataset(partition, frequency):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
-    cifar10_preprocess_train_high = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0., 0., 0.), (0.2023, 0.1994, 0.2010))
-    ])
 
     cifar10_preprocess_val  = transforms.Compose([
         transforms.ToTensor(),
@@ -85,14 +100,10 @@ def get_dataset(partition, frequency):
     ])
 
     if partition =='train':
-        if frequency == 'high':
-            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/train',
+        return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/train',
                            '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
-                           transform=cifar10_preprocess_train_high, frequency=frequency)
-        else:
-            return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/train',
-                               '/home/haojieyuan/Data/CIFAR_10_data/images/train.txt',
-                               transform=cifar10_preprocess_train, frequency=frequency)
+                           transform=cifar10_preprocess_train, frequency=frequency)
+
     else:
         return udf_dataset('/home/haojieyuan/Data/CIFAR_10_data/images/val',
                            '/home/haojieyuan/Data/CIFAR_10_data/images/val.txt',

@@ -1,2 +1,0 @@
-=> creating model ResNet50
-Using high part of training set
