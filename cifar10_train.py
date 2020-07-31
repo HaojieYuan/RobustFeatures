@@ -171,10 +171,10 @@ def main():
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
 
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
-                                momentum=0.9, weight_decay=5e-4)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
+    #                            momentum=0.9, weight_decay=5e-4)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -229,7 +229,7 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
 
-        adjust_learning_rate(optimizer, epoch, args)
+        #adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
